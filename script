@@ -1,0 +1,12 @@
+#test box mesh
+box
+0 0 0 200 200 200
+ident
+rotate
+x 30
+rotate
+y 30
+move
+200 300 0
+apply
+display
