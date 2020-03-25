@@ -157,12 +157,12 @@ void Screen::drawTriangles(Mat4 const &matrix, Color color)
         Vec4 const &b = matrix.getPoint(col + 1);
         Vec4 const &c = matrix.getPoint(col + 2);
 
-        // Vec4 normal = a.getNormal(b, c);
+        Vec4 normal = a.getNormal(b, c);
 
-        // if (normal.getZ() < std::numeric_limits<double>::epsilon() * 100) //this works in screen space :)
-        // {
-        //     continue;
-        // }
+        if (normal.getZ() < std::numeric_limits<double>::epsilon() * 100) //this works in screen space :)
+        {
+            continue;
+        }
 
         drawLine(a, b, color);
         drawLine(b, c, color);
