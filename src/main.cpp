@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <chrono>
 
+#include <utility>
+
 #include <cmath>
 
 #include "Utils.hpp"
@@ -164,7 +166,7 @@ void parse(std::string fileName, Screen &screen, Mat4 &edges, Mat4 &triangles, M
             double r;
             iss >> v >> r;
 
-            triangles.addSphere(v, r, 30, 15);
+            triangles.addSphere(v, r, 20, 10);
         }
         else if (line == "torus")
         {
@@ -192,11 +194,75 @@ void parse(std::string fileName, Screen &screen, Mat4 &edges, Mat4 &triangles, M
 int main()
 {
     Screen screen(500, 500);
+
     Mat4 edges(0);
     Mat4 triangles(0);
     Mat4 transform = Mat4::identity();
 
     parse("script_1", screen, edges, triangles, transform, {255, 127, 127, 255});
+
+    // Mat4 initial(0);
+    // initial.clear();
+    // initial.addSphere({0, 0, 0}, 200, 40, 20);
+
+    // //Mat4 final = initial;
+
+    // std::random_device rd;
+    // std::mt19937 gen(rd());
+    // std::uniform_real_distribution<double> distribution(-3, 3);
+
+    // // std::vector<double> initialOffsets;
+    // // std::vector<double> finalOffsets;
+
+    // std::unordered_map<Vec4, std::pair<double, double>> offsets;
+
+    // for (int i = 0; i < initial.getCols(); i++)
+    // {
+    //     Vec4 pt = initial.getPoint(i);
+    //     pt = pt.round(1000000);
+    //     if (offsets.count(pt) == 0) {
+    //         offsets[pt] = {distribution(gen), 1};
+    //     }
+
+    //     // initialOffsets.push_back(distribution(rd));
+    //     // finalOffsets.push_back(distribution(rd));
+    // }
+
+    // Mat4 sphere(0);
+
+    // int maxT = 30;
+    // for (int t = 0; t < 42; t++)
+    // {
+    //     screen.clear({0, 0, 0, 0});
+    //     sphere.clear();
+    //     sphere.addSphere({0, 0, 0}, 200, 40, 20);
+
+    //     for (int j = 0; j < sphere.getCols(); j++)
+    //     {
+    //         Vec4 pt = sphere.getPoint(j);
+    //         Vec4 rounded = pt.round(1000000);
+    //         double interp = t / static_cast<double>(maxT);
+    //         if (t > maxT) {
+    //             //interp = (maxT - (t - maxT)) / static_cast<double>(maxT);
+    //             interp = 1;
+    //         }
+    //         double offset = Utils::lerp(offsets[rounded].first, offsets[rounded].second, interp);
+    //         //std::cout << offset << std::endl;
+    //         pt = pt * offset;
+    //         pt.setW(1);
+    //         //std::cout << j << " " << offset << " " << pt << std::endl;
+    //         sphere.setPoint(j, pt);
+    //     }
+    //     sphere.multiplyMutate(Mat4::rotX(20 * (M_PI / 180)));
+    //     sphere.multiplyMutate(Mat4::rotY(20 * (M_PI / 180)));
+    //     sphere.multiplyMutate(Mat4::translate({250, 250, 0}));
+    //     screen.drawTriangles(sphere, {255, 0, 0, 0});
+
+    //     std::string s = std::to_string(t);
+    //     s.insert(s.begin(), 3 - s.size(), '0');
+
+    //     screen.toFileExtension("img" + s + ".png");
+    // }
 
     return 0;
 }

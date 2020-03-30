@@ -23,6 +23,7 @@ public:
     std::string toString() const;
 
     Vec4 getPoint(int col) const;
+    void setPoint(int col, Vec4 vec);
 
     void clear();
     Mat4 multiply(const Mat4 &matrix) const;

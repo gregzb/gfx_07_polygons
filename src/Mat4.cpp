@@ -3,7 +3,9 @@
 #include <string>
 #include <iostream>
 #include <cmath>
+#include <unordered_map>
 #include <tuple>
+#include <array>
 
 #include "assert.h"
 
@@ -67,6 +69,14 @@ std::string Mat4::toString() const
 Vec4 Mat4::getPoint(int col) const
 {
     return {m[0][col], m[1][col], m[2][col], m[3][col]};
+}
+
+void Mat4::setPoint(int col, Vec4 vec)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        m[i][col] = vec[i];
+    }
 }
 
 Mat4 Mat4::identity()
@@ -236,44 +246,30 @@ void Mat4::addBox(Vec4 const &v, Vec4 const &dims)
     double y1 = y - dims.getY();
     double z1 = z - dims.getZ();
 
-    // //fix z
-    // addQuad({x, y, z}, {x1, y, z}, {x1, y1, z}, {x, y1, z});
-    // addQuad({x, y, z1}, {x, y1, z1}, {x1, y1, z1}, {x1, y, z1});
+    //fix z
+    addQuad({x, y, z}, {x, y1, z}, {x1, y1, z}, {x1, y, z});
+    addQuad({x, y, z1}, {x1, y, z1}, {x1, y1, z1}, {x, y1, z1});
 
-    // //fix x
-    // addQuad({x, y, z}, {x, y, z1}, {x, y1, z1}, {x, y1, z});
-    // addQuad({x1, y, z}, {x1, y1, z}, {x1, y1, z1}, {x1, y, z1});
+    //fix x
+    addQuad({x, y, z}, {x, y, z1}, {x, y1, z1}, {x, y1, z});
+    addQuad({x, y, z}, {x, y1, z}, {x, y1, z1}, {x, y, z1});
 
-    // //fix y
-    // addQuad({x1, y, z}, {x1, y, z1}, {x, y, z1}, {x, y, z});
-    // addQuad({x1, y1, z}, {x, y1, z}, {x, y1, z1}, {x1, y1, z1});
-
-    addTriangle({x, y, z}, {x1, y, z}, {x, y, z1});
-    //oui
-    addTriangle({x1, y, z}, {x1, y, z1}, {x, y, z1});
-
-    addTriangle({x, y, z}, {x, y1, z}, {x1, y1, z});
-    addTriangle({x, y, z}, {x1, y1, z}, {x1, y, z});
-
-    addTriangle({x, y, z}, {x, y1, z1}, {x, y1, z});
-    addTriangle({x, y, z}, {x, y, z1}, {x, y1, z1});
-
-    addTriangle({x, y1, z}, {x, y1, z1}, {x1, y1, z});
-    addTriangle({x1, y1, z}, {x, y1, z1}, {x1, y1, z1});
-
-    addTriangle({x1, y, z}, {x1, y1, z}, {x1, y1, z1});
-    //oui
-    addTriangle({x1, y, z}, {x1, y1, z1}, {x1, y, z1});
-
-    addTriangle({x, y, z1}, {x1, y1, z1}, {x, y1, z1});
-    addTriangle({x, y, z1}, {x1, y, z1}, {x1, y1, z1});
-
+    //fix y
+    addQuad({x1, y, z}, {x1, y, z1}, {x, y, z1}, {x, y, z});
+    addQuad({x1, y1, z}, {x, y1, z}, {x, y1, z1}, {x1, y1, z1});
 }
 
 void Mat4::addSphere(Vec4 const &v, double r, int thetaSteps, int phiSteps)
 {
     double thetaStepSize = 2 * M_PI / thetaSteps;
     double phiStepSize = M_PI / phiSteps;
+
+    std::vector<std::vector<Vec4>> dp(phiSteps+1);
+    for (auto & row : dp) {
+        for (int i = 0; i <= thetaSteps; i++) {
+            row.push_back({0, 0, 0, -1});
+        }
+    }
 
     std::vector<int> offsets{0, 0, 1, 0, 1, 1, 0, 1};
 
@@ -285,16 +281,27 @@ void Mat4::addSphere(Vec4 const &v, double r, int thetaSteps, int phiSteps)
             points.reserve(4);
             for (int i = 0; i < 8; i += 2)
             {
-                double phi = (phiStep + offsets[i]) * phiStepSize;
-                double theta = (thetaStep + offsets[i + 1]) * thetaStepSize;
-                Vec4 point = {r * std::cos(phi),
-                              r * std::sin(phi) * std::cos(theta),
-                              r * std::sin(phi) * std::sin(theta)};
-                point.setW(0);
-                points.push_back(v + point);
-            }
+                int newPhiStep = phiStep + offsets[i];
+                int newThetaStep = thetaStep + offsets[i + 1];
 
-            addQuad(points[0], points[1], points[2], points[3]);
+                if (dp[newPhiStep][newThetaStep].getW() == -1) {
+                    double phi = newPhiStep * phiStepSize;
+                    double theta = newThetaStep * thetaStepSize;
+                    Vec4 point = {r * std::cos(phi),
+                                r * std::sin(phi) * std::cos(theta),
+                                r * std::sin(phi) * std::sin(theta)};
+                    point.setW(0);
+                    dp[newPhiStep][newThetaStep] = v + point;
+                }
+                points.push_back(dp[newPhiStep][newThetaStep]);
+            }
+            if (phiStep == 0) {
+                addTriangle(points[0], points[1], points[2]);
+            } else if (phiStep == phiSteps - 1) {
+                addTriangle(points[0], points[2], points[3]);
+            } else {
+                addQuad(points[0], points[1], points[2], points[3]);
+            }
         }
     }
 }
@@ -304,6 +311,13 @@ void Mat4::addTorus(Vec4 const &v, double r1, double r2, int thetaSteps, int phi
     double thetaStepSize = 2 * M_PI / thetaSteps;
     double phiStepSize = 2 * M_PI / phiSteps;
 
+    std::vector<std::vector<Vec4>> dp(phiSteps+1);
+    for (auto & row : dp) {
+        for (int i = 0; i <= thetaSteps; i++) {
+            row.push_back({0, 0, 0, -1});
+        }
+    }
+
     std::vector<int> offsets{0, 0, 1, 0, 1, 1, 0, 1};
 
     for (int phiStep = 0; phiStep < phiSteps; phiStep++)
@@ -314,13 +328,19 @@ void Mat4::addTorus(Vec4 const &v, double r1, double r2, int thetaSteps, int phi
             points.reserve(4);
             for (int i = 0; i < 8; i += 2)
             {
-                double phi = (phiStep % phiSteps + offsets[i]) * phiStepSize;
-                double theta = (thetaStep + offsets[i + 1]) * thetaStepSize;
-                Vec4 point = {(r2 + r1 * std::cos(phi)) * std::cos(theta),
-                              r1 * std::sin(phi),
-                              (r2 + r1 * std::cos(phi)) * std::sin(theta)};
-                point.setW(0);
-                points.push_back(v + point);
+                int newPhiStep = phiStep + offsets[i];
+                int newThetaStep = thetaStep + offsets[i + 1];
+
+                if (dp[newPhiStep][newThetaStep].getW() == -1) {
+                    double phi = newPhiStep * phiStepSize;
+                    double theta = newThetaStep * thetaStepSize;
+                    Vec4 point = {(r2 + r1 * std::cos(phi)) * std::cos(theta),
+                                r1 * std::sin(phi),
+                                (r2 + r1 * std::cos(phi)) * std::sin(theta)};
+                    point.setW(0);
+                    dp[newPhiStep][newThetaStep] = v + point;
+                }
+                points.push_back(dp[newPhiStep][newThetaStep]);
             }
 
             addQuad(points[0], points[1], points[2], points[3]);
