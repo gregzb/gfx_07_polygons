@@ -241,14 +241,13 @@ void Mat4::addBox(Vec4 const &v, Vec4 const &dims)
     x = v.getX();
     y = v.getY();
     z = v.getZ();
-    ;
     double x1 = x + dims.getX();
     double y1 = y - dims.getY();
     double z1 = z - dims.getZ();
 
     //fix z
-    addQuad({x, y, z}, {x, y1, z}, {x1, y1, z}, {x1, y, z});
     addQuad({x, y, z1}, {x1, y, z1}, {x1, y1, z1}, {x, y1, z1});
+    addQuad({x, y, z}, {x, y1, z}, {x1, y1, z}, {x1, y, z});
 
     //fix x
     addQuad({x, y, z}, {x, y, z1}, {x, y1, z1}, {x, y1, z});
